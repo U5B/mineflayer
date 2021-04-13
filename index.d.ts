@@ -31,6 +31,8 @@ export interface BotOptions extends ClientOptions {
   mainHand?: MainHands;
   difficulty?: number;
   chatLengthLimit?: number;
+  physicsEnabled?: boolean;
+  client?: Client;
 }
 
 export type ChatLevel = "enabled" | "commandsOnly" | "disabled";
@@ -61,6 +63,7 @@ interface BotEvents {
   actionBar: (jsonMsg: ChatMessage) => void;
   error: (err: Error) => void;
   message: (jsonMsg: ChatMessage, position: string) => void;
+  messagestr: (message: string, position: string, jsonMsg: ChatMessage) => void;
   unmatchedMessage: (stringMsg: string, jsonMsg: ChatMessage) => void;
   login: () => void;
   spawn: () => void;
@@ -128,6 +131,7 @@ interface BotEvents {
   sleep: () => void;
   wake: () => void;
   experience: () => void;
+  physicsTick: () => void;
   physicTick: () => void;
   scoreboardCreated: (scoreboard: ScoreBoard) => void
   scoreboardDeleted: (scoreboard: ScoreBoard) => void
@@ -159,6 +163,7 @@ export interface Bot extends TypedEmitter<BotEvents> {
   food: number;
   foodSaturation: number;
   physics: PhysicsOptions;
+  physicsEnabled: boolean;
   time: Time;
   quickBarSlot: number;
   inventory: Window;
@@ -182,6 +187,8 @@ export interface Bot extends TypedEmitter<BotEvents> {
   blockAt(point: Vec3): Block | null;
 
   blockInSight(maxSteps: number, vectorLength: number): Block | null;
+
+  blockAtCursor(maxDistance?: number, matcher?: Function): Block | null;
 
   canSeeBlock(block: Block): boolean;
 
@@ -234,6 +241,8 @@ export interface Bot extends TypedEmitter<BotEvents> {
   wake(cb?: (err?: Error) => void): Promise<void>;
 
   setControlState(control: ControlState, state: boolean): void;
+
+  getControlState(control: ControlState): boolean;
 
   clearControlStates(): void;
 
@@ -325,6 +334,8 @@ export interface Bot extends TypedEmitter<BotEvents> {
 
   openEnchantmentTable(enchantmentTable: Block): EnchantmentTable;
 
+  openAnvil(anvil: Block): Anvil;
+
   openVillager(
     villager: Entity
   ): Villager;
@@ -376,6 +387,17 @@ export interface Bot extends TypedEmitter<BotEvents> {
   waitForChunksToLoad(cb?: (err?: Error) => void): Promise<void>;
 
   nearestEntity(filter?: (entity: Entity) => boolean): Entity | null;
+
+  waitForTicks(ticks: number): Promise<void>;
+
+  addChatPattern(name: string, pattern: RegExp, options: chatPatternOptions): void;
+
+  addChatPatternSet(name: string, patterns: Array<RegExp>, options?: chatPatternOptions): void;
+}
+
+export interface chatPatternOptions {
+  repeat: boolean;
+  parse: boolean;
 }
 
 export interface GameState {
@@ -700,6 +722,11 @@ export class EnchantmentTable extends (EventEmitter as new () => TypedEmitter<Co
   putTargetItem(item: Item, cb?: (err: Error | null) => void): Promise<Item>;
 
   putLapis(item: Item, cb?: (err: Error | null) => void): Promise<Item>;
+}
+
+export class Anvil {
+  combine(itemOne: Item, itemTwo: Item, name?: string): Promise<void>
+  rename(item: Item, name?: string): Promise<void>
 }
 
 export type Enchantment = {

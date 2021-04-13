@@ -17,6 +17,44 @@ Spigot servers, in particular some plugins, use custom chat formats, you need to
 Read and adapt [chatAddPattern.js](https://github.com/PrismarineJS/mineflayer/blob/master/examples/chatAddPattern.js) to make it work for your particular
 chat plugin. Also read http://mineflayer.prismarine.js.org/#/tutorial?id=custom-chat
 
+### How can I collect info from an custom plugin in chat ?
+
+Most custom minecraft servers have plugin support, and a lot of these plugins say something in chat when something happens. If it is just one message, it's best to use the solution discussed in the solution above, but when these messages are split into many small messages, another option is using the `"messagestr"` event as it allows for easily parsing multi-line messages.
+
+**Example:**
+
+chat message in chat looks like:
+```
+(!) U9G has won the /jackpot and received
+$26,418,402,450! They purchased 2,350,000 (76.32%) ticket(s) out of the
+3,079,185 ticket(s) sold!
+```
+```js
+const regex = {
+  first: /\(!\) (.+) has won the \/jackpot and received +/,
+  second: /\$(.+)! They purchased (.+) \((.+)%\) ticket\(s\) out of the /,
+  third: /(.+) ticket\(s\) sold!/
+}
+
+let jackpot = {}
+bot.on('messagestr', msg => {
+  if (regex.first.test(msg)) {
+    const username = msg.match(regex.first)[1]
+    jackpot.username = username
+  } else if (regex.second.test(msg)) {
+    const [, moneyWon, boughtTickets, winPercent] = msg.match(regex.second)
+    jackpot.moneyWon = parseInt(moneyWon.replace(/,/g, ''))
+    jackpot.boughtTickets = parseInt(boughtTickets.replace(/,/g, ''))
+    jackpot.winPercent = parseFloat(winPercent)
+  } else if (regex.third.test(msg)) {
+    const totalTickets = msg.match(regex.third)[1]
+    jackpot.totalTickets = parseInt(totalTickets.replace(/,/g, ''))
+    onDone(jackpot)
+    jackpot = {}
+  }
+})
+
+```
 ### How can I send a command ?
 
 By using `bot.chat()`.
@@ -108,3 +146,22 @@ connect: (client) => {
     })
   }
   ```
+  
+# Common Errors
+
+### `UnhandledPromiseRejectionWarning: Error: Failed to read asymmetric key`
+
+This is what happens when either you gave mineflayer the wrong server version, or mineflayer detects the wrong server version
+
+### `TypeError: Cannot read property '?' of undefined`
+
+You may be trying to use something on the bot object that isn't there yet, try calling the statement after the `spawn` event
+
+### `SyntaxError: Unexpected token '?'`
+
+Update your node version.
+
+### The bot can't break/place blocks or open chests
+
+Check that spawn protection isn't stopping the bot from it's action
+

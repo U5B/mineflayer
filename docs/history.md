@@ -1,3 +1,35 @@
+## 3.6.0
+* add bot.addChatPattern() & bot.addChatPatternSet() & deprecate bot.chatAddPattern() (@U9G)
+
+## 3.5.0
+* Add common errors to FAQ (@U9G)
+* Move mosts of index.js to lib/loader.js (@U9G)
+* Improve packet_info handling (@Karang)
+* Add getControlState function (@Camezza)
+
+## 3.4.0
+* fix once leak in placeBlock (@Karang)
+* allow sleeping during rain/thunderstorms (@qrvd)
+* Change transaction apology packet to match vanilla client (@FeldrinH)
+
+## 3.3.3
+* fix world switch leak
+
+## 3.3.2
+* fix entity names
+
+## 3.3.1
+* fix stop digging (@Karang)
+
+## 3.3.0
+* trading fix (@validgem)
+* fix enchantments (@goncharovchik)
+* fix newListener and removeListener stacking on world change (@U5B)
+* add a 'messagestr' event (@U9G)
+* Add an option forceLook for place block similar to the digging one (@CyberPatrick)
+* Can see block add intersect match (@sefirosweb)
+* Add ability to use an anvil fully (@U9G)
+
 ## 3.2.0
 * Fix position in getBlock()
 

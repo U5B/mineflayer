@@ -67,10 +67,13 @@
     - [mineflayer.createBot(options)](#mineflayercreatebotoptions)
     - [Properties](#properties)
       - [bot.world](#botworld)
+        - [world "blockUpdate" (oldBlock, newBlock)](#world-blockupdate-oldblock-newblock)
+        - [world "blockUpdate:(x, y, z)" (oldBlock, newBlock)](#world-blockupdatex-y-z-oldblock-newblock)
       - [bot.entity](#botentity)
       - [bot.entities](#botentities)
       - [bot.username](#botusername)
       - [bot.spawnPoint](#botspawnpoint)
+      - [bot.heldItem](#bothelditem)
       - [bot.game.levelType](#botgameleveltype)
       - [bot.game.dimension](#botgamedimension)
       - [bot.game.difficulty](#botgamedifficulty)
@@ -78,21 +81,25 @@
       - [bot.game.hardcore](#botgamehardcore)
       - [bot.game.maxPlayers](#botgamemaxplayers)
       - [bot.game.serverBrand](#botgameserverbrand)
+    - [bot.physicEnabled](#botphysicenabled)
     - [bot.player](#botplayer)
       - [bot.players](#botplayers)
       - [bot.isRaining](#botisraining)
+      - [bot.rainState](#botrainstate)
+      - [bot.thunderState](#botthunderstate)
       - [bot.chatPatterns](#botchatpatterns)
       - [bot.settings.chat](#botsettingschat)
       - [bot.settings.colorsEnabled](#botsettingscolorsenabled)
       - [bot.settings.viewDistance](#botsettingsviewdistance)
       - [bot.settings.difficulty](#botsettingsdifficulty)
-      - [bot.settings.skinParts.showCape](#botsettingsskinpartsshowcape)
-      - [bot.settings.skinParts.showJacket](#botsettingsskinpartsshowjacket)
-      - [bot.settings.skinParts.showLeftSleeve](#botsettingsskinpartsshowleftsleeve)
-      - [bot.settings.skinParts.showRightSleeve](#botsettingsskinpartsshowrightsleeve)
-      - [bot.settings.skinParts.showLeftPants](#botsettingsskinpartsshowleftpants)
-      - [bot.settings.skinParts.showRightPants](#botsettingsskinpartsshowrightpants)
-      - [bot.settings.skinParts.showHat](#botsettingsskinpartsshowhat)
+      - [bot.settings.skinParts](#botsettingsskinparts)
+        - [bot.settings.skinParts.showCape](#botsettingsskinpartsshowcape)
+        - [bot.settings.skinParts.showJacket](#botsettingsskinpartsshowjacket)
+        - [bot.settings.skinParts.showLeftSleeve](#botsettingsskinpartsshowleftsleeve)
+        - [bot.settings.skinParts.showRightSleeve](#botsettingsskinpartsshowrightsleeve)
+        - [bot.settings.skinParts.showLeftPants](#botsettingsskinpartsshowleftpants)
+        - [bot.settings.skinParts.showRightPants](#botsettingsskinpartsshowrightpants)
+        - [bot.settings.skinParts.showHat](#botsettingsskinpartsshowhat)
       - [bot.experience.level](#botexperiencelevel)
       - [bot.experience.points](#botexperiencepoints)
       - [bot.experience.progress](#botexperienceprogress)
@@ -127,9 +134,11 @@
       - ["game"](#game)
       - ["title"](#title)
       - ["rain"](#rain)
+      - ["weatherUpdate"](#weatherUpdate)
       - ["time"](#time)
       - ["kicked" (reason, loggedIn)](#kicked-reason-loggedin)
       - ["end"](#end)
+      - ["error" (err)](#error-err)
       - ["spawnReset"](#spawnreset)
       - ["death"](#death)
       - ["health"](#health)
@@ -213,6 +222,7 @@
       - [bot.isABed(bedBlock)](#botisabedbedblock)
       - [bot.wake([cb])](#botwakecb)
       - [bot.setControlState(control, state)](#botsetcontrolstatecontrol-state)
+      - [bot.getControlState(control)](#botgetcontrolstatecontrol-state)
       - [bot.clearControlStates()](#botclearcontrolstates)
       - [bot.lookAt(point, [force], [callback])](#botlookatpoint-force-callback)
       - [bot.look(yaw, pitch, [force], [callback])](#botlookyaw-pitch-force-callback)
@@ -221,7 +231,7 @@
       - [bot.unequip(destination, [callback])](#botunequipdestination-callback)
       - [bot.tossStack(item, [callback])](#bottossstackitem-callback)
       - [bot.toss(itemType, metadata, count, [callback])](#bottossitemtype-metadata-count-callback)
-      - [bot.dig(block, [forceLook = true], [callback])](#botdigblock-forcelook--true-callback)
+      - [bot.dig(block, [forceLook = true], [digFace], [callback])](#botdigblock-forcelook--true-digface-callback)
       - [bot.stopDigging()](#botstopdigging)
       - [bot.digTime(block)](#botdigtimeblock)
       - [bot.placeBlock(referenceBlock, faceVector, cb)](#botplaceblockreferenceblock-facevector-cb)
@@ -503,16 +513,28 @@ This function also returns a `Promise`, with `void` as its argument upon complet
 
  * `callback(err)`
 
- #### enchantmentTable.putLapis(item, [callback])
+#### enchantmentTable.putLapis(item, [callback])
 
 This function also returns a `Promise`, with `void` as its argument upon completion.
 
  * `callback(err)`
 
-### mineflayer.Villager
+### mineflayer.anvil
 
-Extends windows.Window for villagers
-See `bot.openVillager(villagerEntity)`.
+Extends windows.Window for anvils
+See `bot.openAnvil(anvilBlock)`.
+
+#### anvil.combine(itemOne, itemTwo[, name, callback])
+
+This function also returns a `Promise`, with `void` as its argument upon completion.
+
+ * `callback(err)` - in order to use callback, pass an empty string ('') for name
+
+#### anvil.combine(item[, name, callback])
+
+This function also returns a `Promise`, with `void` as its argument upon completion.
+
+ * `callback(err)`
 
 #### villager "ready"
 
@@ -643,21 +665,17 @@ Create and return an instance of the class bot.
  * checkTimeoutInterval : default to `30*1000` (30s), check if keepalive received at that period, disconnect otherwise.
  * loadInternalPlugins : defaults to true
  * storageBuilder : an optional function, takes as argument version and worldName and return an instance of something with the same API as prismarine-provider-anvil. Will be used to save the world.
+ * client : an instance of node-minecraft-protocol, if not specified, mineflayer makes it's own client. This can be used to enable using mineflayer through a proxy of many clients or a vanilla client and a mineflayer client.
  * plugins : object : defaults to {}
    - pluginName : false : don't load internal plugin with given name ie. `pluginName`
    - pluginName : true : load internal plugin with given name ie. `pluginName` even though loadInternalplugins is set to false
    - pluginName : external plugin inject function : loads external plugin, overrides internal plugin with given name ie. `pluginName`
- * [chat](bot.settings.chat)
- * [colorsEnabled](bot.settings.colorsEnabled)
- * [viewDistance](bot.settings.viewDistance)
- * [difficulty](bot.settings.difficulty)
- * [showCape](bot.settings.skinParts.showCape)
- * [showJacket](bot.settings.skinParts.showJacket)
- * [showLeftSleeve](bot.settings.skinParts.showLeftSleeve)
- * [showRightSleeve](bot.settings.skinParts.showRightSleeve)
- * [showLeftPants](bot.settings.skinParts.showLeftPants)
- * [showRigthtPants](bot.settings.skinParts.showRightPants)
- * [showHat](bot.settings.skinParts.showHat)
+ * physicsEnabled : true by default, should the bot be affected by physics? can later be modified via bot.physicsEnabled
+ * [chat](#bot.settings.chat)
+ * [colorsEnabled](#bot.settings.colorsEnabled)
+ * [viewDistance](#bot.settings.viewDistance)
+ * [difficulty](#bot.settings.difficulty)
+ * [skinParts](#bot.settings.skinParts)
  * chatLengthLimit : the maximum amount of characters that can be sent in a single message. If this is not set, it will be 100 in < 1.11 and 256 in >= 1.11.
 
 ### Properties
@@ -666,16 +684,14 @@ Create and return an instance of the class bot.
 
 A sync representation of the world. Check the doc at http://github.com/PrismarineJS/prismarine-world
 
-#### Events:
-
-#### "blockUpdate" (oldBlock, newBlock)
+##### world "blockUpdate" (oldBlock, newBlock)
 
 Fires when a block updates. Both `oldBlock` and `newBlock` provided for
 comparison.
 
 Note that `oldBlock` may be `null`.
 
-#### "blockUpdate:(x, y, z)" (oldBlock, newBlock)
+##### world "blockUpdate:(x, y, z)" (oldBlock, newBlock)
 
 Fires for a specific point. Both `oldBlock` and `newBlock` provided for
 comparison.
@@ -717,7 +733,7 @@ The item in the bot's hand, represented as a [prismarine-item](https://github.co
 
 #### bot.game.serverBrand
 
-### bot.physicEnabled
+### bot.physicsEnabled
 
 Enable physics, default true.
 
@@ -739,6 +755,25 @@ Bot's player object
 Map of username to people playing the game.
 
 #### bot.isRaining
+
+#### bot.rainState
+
+A number indicating the current rain level. When it isn't raining, this
+will be equal to 0. When it starts to rain, this value will increase
+gradually up to 1. When it stops raining, this value gradually decreases back to 0.
+
+Each time `bot.rainState` is changed, the "weatherUpdate" event is emitted.
+
+#### bot.thunderState
+
+A number indicating the current thunder level. When there isn't a thunderstorm, this
+will be equal to 0. When a thunderstorm starts, this value will increase
+gradually up to 1. When the thunderstorm stops, this value gradually decreases back to 0.
+
+Each time `bot.thunderState` is changed, the "weatherUpdate" event is emitted.
+
+This is the same as `bot.rainState`, but for thunderstorms. 
+For thunderstorms, both `bot.rainState` and `bot.thunderState` will change.
 
 #### bot.chatPatterns
 
@@ -772,33 +807,26 @@ Choices:
 
 Same as from server.properties.
 
-#### bot.settings.skinParts.showCape
+#### bot.settings.skinParts
+
+These boolean Settings control if extra Skin Details on the own players' skin should be visible
+
+##### bot.settings.skinParts.showCape
 
 If you have a cape you can turn it off by setting this to false.
 
-#### bot.settings.skinParts.showJacket
+##### bot.settings.skinParts.showJacket
 
-Set the jacket layer of the skin.
+##### bot.settings.skinParts.showLeftSleeve
 
-#### bot.settings.skinParts.showLeftSleeve
+##### bot.settings.skinParts.showRightSleeve
 
-Set the left sleeve layer of the skin.
+##### bot.settings.skinParts.showLeftPants
 
-#### bot.settings.skinParts.showRightSleeve
+##### bot.settings.skinParts.showRightPants
 
-Set the right sleeve layer of the skin.
+##### bot.settings.skinParts.showHat
 
-#### bot.settings.skinParts.showLeftPants
-
-Set the left pants layer of the skin.
-
-#### bot.settings.skinParts.showRightPants
-
-Set the right pants layer of the skin.
-
-#### bot.settings.skinParts.showHat
-
-Set the hat layer of the skin.
 
 #### bot.experience.level
 
@@ -960,6 +988,10 @@ Emitted for every server message, including chats.
    * system
    * game_info
 
+#### "messagestr" (message, messagePosition, jsonMsg)
+
+alias for the "message" event but it calls .toString() on the message object to get a string for the message before emitting.
+
 #### "login"
 
 Fires after you successfully login to the server.
@@ -995,6 +1027,11 @@ Emitted when the server sends a title
 Emitted when it starts or stops raining. If you join a
 server where it is already raining, this event will fire.
 
+#### "weatherUpdate"
+
+Emitted when either `bot.thunderState` or `bot.rainState` changes.
+If you join a server where it is already raining, this event will fire.
+
 #### "time"
 
 Emitted when the server sends a time update. See `bot.time`.
@@ -1009,6 +1046,10 @@ or `false` if the kick occurred in the login phase.
 #### "end"
 
 Emitted when you are no longer connected to the server.
+
+#### "error" (err)
+
+Emitted when an error occurs.
 
 #### "spawnReset"
 
@@ -1226,6 +1267,14 @@ Fires when new boss bar is updated.
 
 Fires when the held item is changed.
 
+#### "physicsTick" ()
+
+Fires every tick if bot.physicsEnabled is set to true.
+
+#### "chat:name" (matches)
+
+Fires when the all of a chat pattern's regexs have matches
+
 ### Functions
 
 #### bot.blockAt(point, extraInfos=true)
@@ -1331,10 +1380,35 @@ Shortcut for "/tell <username>". All split messages will be whispered to usernam
 
 #### bot.chatAddPattern(pattern, chatType, description)
 
+Deprecated, use `addChatPattern` instead.
+
 Adds a regex pattern to the bot's chat matching. Useful for bukkit servers where the chat format changes a lot.
  * `pattern` - regular expression to match chat
  * `chatType` - the event the bot emits when the pattern matches. Eg: "chat" or "whisper"
  * 'description ' - Optional, describes what the pattern is for
+
+#### bot.addChatPattern(name, pattern, chatPatternOptions)
+
+** this is an alias of `bot.addChatPatternSet(name, [pattern], chatPatternOptions)`
+
+make an event that is called every time the pattern is matched to a message,
+the event will be called `"chat:name"`, with name being the name passed
+* `name` - the name used to listen for the event
+* `pattern` - regular expression to match to messages recieved
+* `chatPatternOptions` - object
+  * `repeat` - defaults to true, whether to listen for this event after the first match
+  * `parse` - instead of returning the actual message that was matched, return the capture groups from the regex
+  * `deprecated` - (**unstable**) used by bot.chatAddPattern to keep compatability, likely to be removed
+
+#### bot.addChatPatternSet(name, patterns, chatPatternOptions)
+
+make an event that is called every time all patterns havee been matched to messages,
+the event will be called `"chat:name"`, with name being the name passed
+* `name` - the name used to listen for the event
+* `patterns` - array of regular expression to match to messages recieved
+* `chatPatternOptions` - object
+  * `repeat` - defaults to true, whether to listen for this event after the first match
+  * `parse` - instead of returning the actual message that was matched, return the capture groups from the regex
 
 #### bot.setSettings(options)
 
@@ -1396,6 +1470,12 @@ You may use bot.lookAt in conjunction with this to control movement. The jumper.
 
  * `control` - one of ['forward', 'back', 'left', 'right', 'jump', 'sprint', 'sneak']
  * `state` - `true` or `false`
+
+#### bot.getControlState(control)
+
+Returns true if a control state is toggled.
+
+* `control` - one of ['forward', 'back', 'left', 'right', 'jump', 'sprint', 'sneak']
 
 #### bot.clearControlStates()
 
@@ -1637,6 +1717,10 @@ Deprecated. Same as `openContainer`
 Returns a promise on an `EnchantmentTable` instance which represents the enchantment table
 you are opening.
 
+#### bot.openAnvil(anvilBlock)
+
+Returns a promise on an `anvil` instance which represents the anvil you are opening.
+
 #### bot.openVillager(villagerEntity)
 
 Returns a promise on a `Villager` instance which represents the trading window you are opening.
@@ -1683,15 +1767,20 @@ This function also returns a `Promise`, with `void` as its argument upon complet
 
 Click on the current window. See details at https://wiki.vg/Protocol#Click_Window
 
-#### bot.putSelectedItemRange(start, end, window, slot, cb)
+#### bot.putSelectedItemRange(start, end, window, slot, noWaiting)
 
 This function also returns a `Promise`, with `void` as its argument upon completion.
 
 Put the item at `slot` in the specified range.
 
-#### bot.putAway(slot, cb)
+`noWaiting` will not wait for items to be moved.
+Can be useful in case the client is supposed to simulate without feedback from the server.
+
+#### bot.putAway(slot, noWaiting)
 
 This function also returns a `Promise`, with `void` as its argument upon completion.
+`noWaiting` calls putSelectedItemRange with `noWaiting` option: it will not wait for items to be moved.
+Can be useful in case the client is supposed to simulate without feedback from the server.
 
 Put the item at `slot` in the inventory.
 
